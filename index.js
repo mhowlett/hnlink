@@ -93,7 +93,7 @@ function mainLoop(index, maxIndex) {
         .then(function(res) { return res.json(); })
         .then(function(json) {
   		  numOpen -=1;
-	      // fs.appendFile("./tmp.txt", json.text + " \n\n");
+	      fs.writeFile("/data/last.txt", index + " \n\n");
 
 	      // we have a story!
 	      if (json.url && json.id) {
