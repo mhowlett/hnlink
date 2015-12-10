@@ -5,4 +5,4 @@ docker run -it \
   -v /data/hnlink:/data \
   -v /git/hnlink:/usr/src/app \
   node:4 \
-  /git/hnlink/prepare.sh
+  /usr/src/app/prepare.sh
