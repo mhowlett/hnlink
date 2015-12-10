@@ -1,3 +1,5 @@
 #!/bin/bash
 
-echo $PWD
+npm install
+
+node index.js crawl

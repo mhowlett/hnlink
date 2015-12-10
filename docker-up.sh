@@ -5,4 +5,4 @@ docker run -it \
   -v "$PWD":/usr/src/app \
   -w /usr/src/app \
   node:4 \
-  node prepare.sh
+  prepare.sh
