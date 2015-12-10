@@ -1,3 +1,5 @@
+#!/bin/bash
+
 docker run -it \
   --name hnlink \
   -v "$PWD":/usr/src/app \
