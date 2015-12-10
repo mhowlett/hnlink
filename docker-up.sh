@@ -1,8 +1,8 @@
 #!/bin/bash
 
-docker run -it \
+docker run -d \
   --name hnlink \
-  -v /data/hnlink:/data \
+  -v /data:/data \
   -v /git/hnlink:/usr/src/app \
   -w /usr/src/app \
   node:4 \

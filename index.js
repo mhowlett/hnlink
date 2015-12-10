@@ -22,7 +22,7 @@ var levelup = require('levelup');
 var fetch = require('node-fetch');
 var Firebase = require("firebase");
 var fs = require('fs');
-var db = levelup('/data/hnlinks');
+var db = levelup('/data/hnlink');
 
 const maxOutstandingRequests = 10;
 
