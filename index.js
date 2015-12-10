@@ -131,6 +131,7 @@ function parseInfo(infoStr) {
 }
 
 function handleNewUrl(info) {
+  console.log("handling: " + info.id);
   db.get(info.url, function(err, value) {
 	if (err) {
 		// assume doesn't exist, so just add.
