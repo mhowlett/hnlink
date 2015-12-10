@@ -2,8 +2,7 @@
 
 docker run -it \
   --name hnlink \
-  -v /data/hnlink:/data/hnlink \
-  -v "$PWD":/usr/src/app \
-  -w /usr/src/app \
+  -v /data/hnlink:/data \
+  -v /git/hnlink:/usr/src/app \
   node:4 \
   ./prepare.sh
