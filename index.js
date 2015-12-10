@@ -97,12 +97,12 @@ function mainLoop(index, maxIndex) {
 
 	      // we have a story!
 	      if (json.url && json.id) {
-		    handleNewUrl({url: json.url, id: json.id, score: json.score, urlType: 'S'});
+		      handleNewUrl({url: json.url, id: json.id, score: json.score, urlType: 'S'});
 	      }
 	  
 	      // check text for links. 
 	      if (json.text) {
-		    let kidsCount = 0;
+		      let kidsCount = 0;
 		    if (json.kids) {
 		      kidsCount = json.kids.length;
 		    }
@@ -110,6 +110,7 @@ function mainLoop(index, maxIndex) {
 		    let idx = json.text.indexOf("href=\"", loc);
 		    for (; idx != -1; idx = json.text.indexOf("href=\"", loc)) {
 		      let idx2 = json.text.indexOf("\"", idx+6);
+          if (idx2 < idx + 6) { break; }
 		      let url = json.text.substring(idx+6, idx2);
 	  		  handleNewUrl({url: url, id: json.id, score: kidsCount, urlType: 'I'});
  		      loc = idx2 + 1;
