@@ -24,7 +24,7 @@ var Firebase = require("firebase");
 var fs = require('fs');
 var db = levelup('/data/hnlink');
 
-const maxOutstandingRequests = 10;
+const maxOutstandingRequests = 100;
 
 if (process.argv[process.argv.length-1] == "info") {
 	displayInfo();
