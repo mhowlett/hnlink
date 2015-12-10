@@ -74,44 +74,43 @@ function mainLoop(index) {
   let numOpen = 0;
   
   setInterval(function tick() {
-	if (numOpen > maxOutstandingRequests) { return;	}  
-	numOpen += 1;
-	index += 1;
-	
-	db.put('__last_index_fetched__', index, function() {});
-			
-	fetch("https://hacker-news.firebaseio.com/v0/item/" + index + ".json", {timeout: 5000})
-      .then(function(res) { return res.json(); })
-      .then(function(json) {
-		numOpen -=1;
-	    // fs.appendFile("./tmp.txt", json.text + " \n\n");
+  	while (numOpen < maxOutstandingRequests) {
+      numOpen += 1;
+	  index += 1;
+   	  db.put('__last_index_fetched__', index, function() {});
+	  
+	  fetch("https://hacker-news.firebaseio.com/v0/item/" + index + ".json", {timeout: 5000})
+        .then(function(res) { return res.json(); })
+        .then(function(json) {
+  		  numOpen -=1;
+	      // fs.appendFile("./tmp.txt", json.text + " \n\n");
 
-	    // we have a story!
-	    if (json.url && json.id) {
-		  handleNewUrl({url: json.url, id: json.id, score: json.score, urlType: 'S'});
-	    }
+	      // we have a story!
+	      if (json.url && json.id) {
+		    handleNewUrl({url: json.url, id: json.id, score: json.score, urlType: 'S'});
+	      }
 	  
-	    // check text for links. 
-	    if (json.text) {
-		  let kidsCount = 0;
-		  if (json.kids) {
-		    kidsCount = json.kids.length;
+	      // check text for links. 
+	      if (json.text) {
+		    let kidsCount = 0;
+		    if (json.kids) {
+		      kidsCount = json.kids.length;
+		    }
+		    let loc = 0;
+		    let idx = json.text.indexOf("href=\"", loc);
+		    for (; idx != -1; idx = json.text.indexOf("href=\"", loc)) {
+		      let idx2 = json.text.indexOf("\"", idx+6);
+		      let url = json.text.substring(idx+6, idx2);
+	  		  handleNewUrl({url: url, id: json.id, score: kidsCount, urlType: 'I'});
+ 		      loc = idx2 + 1;
+		    }
 		  }
-		  let loc = 0;
-		  let idx = json.text.indexOf("href=\"", loc);
-		  for (; idx != -1; idx = json.text.indexOf("href=\"", loc)) {
-		    let idx2 = json.text.indexOf("\"", idx+6);
-		    let url = json.text.substring(idx+6, idx2);
-			handleNewUrl({url: url, id: json.id, score: kidsCount, urlType: 'I'});
-		    loc = idx2 + 1;
-		  }
-		}
-	  })
-	  .catch(function(err) {
-		numOpen -=1;
-		console.log(err);
-	  });
-	  
+	    })
+	    .catch(function(err) {
+	  	  numOpen -= 1;
+		  console.log(err);
+	    });
+	}
   }, 1000);
   
 };
