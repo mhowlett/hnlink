@@ -30,7 +30,14 @@ if (process.argv[process.argv.length-1] == "info") {
 	displayInfo();
 }
 else {
-	crawl();
+	fetch("https://hacker-news.firebaseio.com/v0/maxitem.json")
+	  .then(function(res) { return res.json(); })
+      .then(function(json) {
+		 crawl(parseInt(json)); 
+	  })
+	  .catch(function(err) {
+		  console.log(err);
+	  })
 }
 
 function displayInfo() {
@@ -50,10 +57,9 @@ function displayInfo() {
     .on('end', function () {
       console.log('Stream end');
     });
-
 }
 
-function crawl() {
+function crawl(maxId) {
   db.get('__last_index_fetched__', function(err, value) {
     let index = 0;
     if (err) {
@@ -66,17 +72,21 @@ function crawl() {
 	  if (index < 0) { index = 0; }
 	  console.log("starting from item #" + index);
     }
-    mainLoop(index);
+    mainLoop(index, maxId);
   });
 }
 
-function mainLoop(index) {
+function mainLoop(index, maxIndex) {
   let numOpen = 0;
   
   setInterval(function tick() {
   	while (numOpen < maxOutstandingRequests) {
       numOpen += 1;
 	  index += 1;
+	  if (index > maxIndex) {
+		  console.log("finished at: " + maxIndex);
+		  process.exit();
+	  }
    	  db.put('__last_index_fetched__', index, function() {});
 	  
 	  fetch("https://hacker-news.firebaseio.com/v0/item/" + index + ".json", {timeout: 5000})
@@ -124,8 +134,8 @@ function handleNewUrl(info) {
   db.get(info.url, function(err, value) {
 	if (err) {
 		// assume doesn't exist, so just add.
-		console.log("don't know about, adding:");
-		console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
+		//console.log("don't know about, adding:");
+		//console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
 		db.put(info.url, info.urlType + " " + info.id + " " + info.score, function() {});
 	}
 	else {
@@ -133,12 +143,12 @@ function handleNewUrl(info) {
 		existingInfo.url = info.url;
 		
 		if (compareOccurances(info, existingInfo) <= 0) {
-			console.log("new info not better than existing:");
-			console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
+			//console.log("new info not better than existing:");
+			//console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
 		}
 		else {
-			console.log("GOT BETTER INFO!: ");
-			console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
+			//console.log("GOT BETTER INFO!: ");
+			//console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
 			db.put(info.url, info.urlType + " " + info.id + " " + info.score, function() {});
 		}
 	}
