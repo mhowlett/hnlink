@@ -60,11 +60,14 @@ function displayInfo() {
 }
 
 function crawl(maxId) {
-  db.get('__last_index_fetched__', function(err, value) {
+  db.get('__last_index_success__', function(err, value) {
     let index = 0;
     if (err) {
       db.put('__last_index_fetched__', 0, function(err) {
 		    console.log("error setting __last_index_fetched__, starting from item #1", err);
+	    });
+      db.put('__last_index_success__', 0, function(err) {
+		    console.log("error setting __last_index_success__, starting from item #1", err);
 	    });
     }
     else {
@@ -72,7 +75,6 @@ function crawl(maxId) {
 	    if (index < 0) { index = 0; }
 	    console.log("starting from item #" + index);
     }
-    index = 9700000;
     mainLoop(index, maxId);
   });
 }
