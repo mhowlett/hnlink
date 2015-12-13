@@ -27,13 +27,13 @@ var db = levelup('/data/hnlink');
 const maxOutstandingRequests = 100;
 
 if (process.argv[process.argv.length-1] == "info") {
-	displayInfo();
+  displayInfo();
 }
 else {
 	fetch("https://hacker-news.firebaseio.com/v0/maxitem.json")
 	  .then(function(res) { return res.json(); })
-      .then(function(json) {
-		 crawl(parseInt(json)); 
+    .then(function(json) {
+      crawl(parseInt(json)); 
 	  })
 	  .catch(function(err) {
 		  console.log(err);
@@ -52,7 +52,7 @@ function displayInfo() {
     })
     .on('close', function () {
       console.log('Stream closed');
-	  console.log("count: " + cnt);
+      console.log("count: " + cnt);
     })
     .on('end', function () {
       console.log('Stream end');
@@ -63,15 +63,16 @@ function crawl(maxId) {
   db.get('__last_index_fetched__', function(err, value) {
     let index = 0;
     if (err) {
-	  db.put('__last_index_fetched__', 0, function(err) {
-		  console.log("error setting __last_index_fetched__, starting from item #1", err);
-	  });
+      db.put('__last_index_fetched__', 0, function(err) {
+		    console.log("error setting __last_index_fetched__, starting from item #1", err);
+	    });
     }
     else {
-	  index = parseInt(value) - maxOutstandingRequests;
-	  if (index < 0) { index = 0; }
-	  console.log("starting from item #" + index);
+	    index = parseInt(value) - maxOutstandingRequests;
+	    if (index < 0) { index = 0; }
+	    console.log("starting from item #" + index);
     }
+    index = 9700000;
     mainLoop(index, maxId);
   });
 }
@@ -82,46 +83,47 @@ function mainLoop(index, maxIndex) {
   setInterval(function tick() {
   	while (numOpen < maxOutstandingRequests) {
       numOpen += 1;
-	  index += 1;
-	  if (index > maxIndex) {
-		  console.log("finished at: " + maxIndex);
-		  process.exit();
-	  }
-   	  db.put('__last_index_fetched__', index, function() {});
+	    index += 1;
+	    if (index > maxIndex) {
+		    console.log("finished at: " + maxIndex);
+		    process.exit();
+	    }
+     	db.put('__last_index_fetched__', index, function() {});
 	  
-	  fetch("https://hacker-news.firebaseio.com/v0/item/" + index + ".json", {timeout: 5000})
+	    fetch("https://hacker-news.firebaseio.com/v0/item/" + index + ".json", {timeout: 5000})
         .then(function(res) { return res.json(); })
         .then(function(json) {
-  		  numOpen -=1;
-	      fs.writeFile("/data/last.txt", index + " \n\n");
+  	  	  numOpen -=1;
+          db.put('__last_index_success__', json.id, function() {});
+	        fs.writeFile("/data/last.txt", json.id + " \n\n");
 
-	      // we have a story!
-	      if (json.url && json.id) {
-		      handleNewUrl({url: json.url, id: json.id, score: json.score, urlType: 'S'});
-	      }
+	        // we have a story!
+	        if (json.url && json.id) {
+		        handleNewUrl({url: json.url, id: json.id, score: json.score, urlType: 'S'});
+	        }
 	  
-	      // check text for links. 
-	      if (json.text) {
-		      let kidsCount = 0;
-		    if (json.kids) {
-		      kidsCount = json.kids.length;
-		    }
-		    let loc = 0;
-		    let idx = json.text.indexOf("href=\"", loc);
-		    for (; idx != -1; idx = json.text.indexOf("href=\"", loc)) {
-		      let idx2 = json.text.indexOf("\"", idx+6);
-          if (idx2 < idx + 6) { break; }
-		      let url = json.text.substring(idx+6, idx2);
-	  		  handleNewUrl({url: url, id: json.id, score: kidsCount, urlType: 'I'});
- 		      loc = idx2 + 1;
-		    }
-		  }
-	    })
-	    .catch(function(err) {
-	  	  numOpen -= 1;
-		  console.log(err);
-	    });
-	}
+	        // check text for links. 
+	        if (json.text) {
+		        let kidsCount = 0;
+		        if (json.kids) {
+		          kidsCount = json.kids.length;
+		        }
+		        let loc = 0;
+		        let idx = json.text.indexOf("href=\"", loc);
+		        for (; idx != -1; idx = json.text.indexOf("href=\"", loc)) {
+		          let idx2 = json.text.indexOf("\"", idx+6);
+              if (idx2 < idx + 6) { break; }
+		          let url = json.text.substring(idx+6, idx2);
+	  	    	  handleNewUrl({url: url, id: json.id, score: kidsCount, urlType: 'I'});
+ 		          loc = idx2 + 1;
+		        }
+		      }
+	      })
+	      .catch(function(err) {
+	    	  numOpen -= 1;
+	  	    console.log(err);
+	      });
+	  }
   }, 1000);
   
 };
