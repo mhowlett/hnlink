@@ -30,21 +30,21 @@ if (process.argv[process.argv.length-1] == "info") {
   displayInfo();
 }
 else {
-	fetch("https://hacker-news.firebaseio.com/v0/maxitem.json")
-	  .then(function(res) { return res.json(); })
+  fetch("https://hacker-news.firebaseio.com/v0/maxitem.json")
+    .then(function(res) { return res.json(); })
     .then(function(json) {
       crawl(parseInt(json)); 
-	  })
-	  .catch(function(err) {
-		  console.log(err);
-	  })
+    })
+    .catch(function(err) {
+      console.log(err);
+    })
 }
 
 function displayInfo() {
   let cnt = 0;
   db.createReadStream()
     .on('data', function (data) {
-	  cnt += 1;
+      cnt += 1;
       console.log(data.key, '=', data.value)
     })
     .on('error', function (err) {
@@ -64,16 +64,16 @@ function crawl(maxId) {
     let index = 0;
     if (err) {
       db.put('__last_index_fetched__', 0, function(err) {
-		    console.log("error setting __last_index_fetched__, starting from item #1", err);
-	    });
+        console.log("error setting __last_index_fetched__, starting from item #1", err);
+      });
       db.put('__last_index_success__', 0, function(err) {
-		    console.log("error setting __last_index_success__, starting from item #1", err);
-	    });
+        console.log("error setting __last_index_success__, starting from item #1", err);
+      });
     }
     else {
-	    index = parseInt(value) - maxOutstandingRequests;
-	    if (index < 0) { index = 0; }
-	    console.log("starting from item #" + index);
+      index = parseInt(value) - maxOutstandingRequests;
+      if (index < 0) { index = 0; }
+      console.log("starting from item #" + index);
     }
     mainLoop(index, maxId);
   });
@@ -83,93 +83,93 @@ function mainLoop(index, maxIndex) {
   let numOpen = 0;
   
   setInterval(function tick() {
-  	while (numOpen < maxOutstandingRequests) {
+    while (numOpen < maxOutstandingRequests) {
       numOpen += 1;
-	    index += 1;
-	    if (index > maxIndex) {
-		    console.log("finished at: " + maxIndex);
-		    process.exit();
-	    }
-     	db.put('__last_index_fetched__', index, function() {});
+      index += 1;
+      if (index > maxIndex) {
+        console.log("finished at: " + maxIndex);
+        process.exit();
+      }
+      db.put('__last_index_fetched__', index, function() {});
 	  
-	    fetch("https://hacker-news.firebaseio.com/v0/item/" + index + ".json", {timeout: 5000})
+      fetch("https://hacker-news.firebaseio.com/v0/item/" + index + ".json", {timeout: 5000})
         .then(function(res) { return res.json(); })
         .then(function(json) {
-  	  	  numOpen -=1;
+          numOpen -=1;
           db.put('__last_index_success__', json.id, function() {});
-	        fs.writeFile("/data/last.txt", json.id + " \n\n");
+          fs.writeFile("/data/last.txt", json.id + " \n\n");
 
-	        // we have a story!
-	        if (json.url && json.id) {
-		        handleNewUrl({url: json.url, id: json.id, score: json.score, urlType: 'S'});
-	        }
-	  
-	        // check text for links. 
-	        if (json.text) {
-		        let kidsCount = 0;
-		        if (json.kids) {
-		          kidsCount = json.kids.length;
-		        }
-		        let loc = 0;
-		        let idx = json.text.indexOf("href=\"", loc);
-		        for (; idx != -1; idx = json.text.indexOf("href=\"", loc)) {
-		          let idx2 = json.text.indexOf("\"", idx+6);
+          // we have a story!
+          if (json.url && json.id) {
+            handleNewUrl({url: json.url, id: json.id, score: json.score, urlType: 'S'});
+          }
+  
+          // check text for links. 
+          if (json.text) {
+            let kidsCount = 0;
+            if (json.kids) {
+              kidsCount = json.kids.length;
+            }
+            let loc = 0;
+            let idx = json.text.indexOf("href=\"", loc);
+            for (; idx != -1; idx = json.text.indexOf("href=\"", loc)) {
+              let idx2 = json.text.indexOf("\"", idx+6);
               if (idx2 < idx + 6) { break; }
-		          let url = json.text.substring(idx+6, idx2);
-	  	    	  handleNewUrl({url: url, id: json.id, score: kidsCount, urlType: 'I'});
- 		          loc = idx2 + 1;
-		        }
-		      }
-	      })
-	      .catch(function(err) {
-	    	  numOpen -= 1;
-	  	    console.log(err);
-	      });
-	  }
+              let url = json.text.substring(idx+6, idx2);
+              handleNewUrl({url: url, id: json.id, score: kidsCount, urlType: 'I'});
+              loc = idx2 + 1;
+            }
+          }
+        })
+        .catch(function(err) {
+          numOpen -= 1;
+          console.log(err);
+        });
+      }
   }, 1000);
   
 };
 
 function parseInfo(infoStr) {
-	let bits = infoStr.split(' ');
-	return { urlType: bits[0], id: parseInt(bits[1]), score: parseInt(bits[2]) };
+  let bits = infoStr.split(' ');
+  return { urlType: bits[0], id: parseInt(bits[1]), score: parseInt(bits[2]) };
 }
 
 function handleNewUrl(info) {
   db.get(info.url, function(err, value) {
-	if (err) {
-		// assume doesn't exist, so just add.
-		//console.log("don't know about, adding:");
-		//console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
-		db.put(info.url, info.urlType + " " + info.id + " " + info.score, function() {});
-	}
-	else {
-		let existingInfo = parseInfo(value);
-		existingInfo.url = info.url;
-		
-		if (compareOccurances(info, existingInfo) <= 0) {
-			//console.log("new info not better than existing:");
-			//console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
-		}
-		else {
-			//console.log("GOT BETTER INFO!: ");
-			//console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
-			db.put(info.url, info.urlType + " " + info.id + " " + info.score, function() {});
-		}
-	}
+    if (err) {
+      // assume doesn't exist, so just add.
+      //console.log("don't know about, adding:");
+      //console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
+      db.put(info.url, info.urlType + " " + info.id + " " + info.score, function() {});
+    }
+    else {
+      let existingInfo = parseInfo(value);
+      existingInfo.url = info.url;
+
+      if (compareOccurances(info, existingInfo) <= 0) {
+        //console.log("new info not better than existing:");
+        //console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
+      }
+      else {
+        //console.log("GOT BETTER INFO!: ");
+        //console.log(info.urlType + " " + info.id + " " + info.score + " " + info.url);
+        db.put(info.url, info.urlType + " " + info.id + " " + info.score, function() {});
+      }
+    }
   });  
 }
 
 function compareOccurances(a, b) {
-	let aScore = a.score;
-	let bScore = b.score;
-	if (a.mentionType == 'S') { aScore *= 8; }
-	if (b.mentionType == 'I') { bScore *= 8; }
-	console.log("a vs b: " + aScore + " " + bScore)
+  let aScore = a.score;
+  let bScore = b.score;
+  if (a.mentionType == 'S') { aScore *= 8; }
+  if (b.mentionType == 'I') { bScore *= 8; }
+  console.log("a vs b: " + aScore + " " + bScore)
 	
-	return a.score == b.score 
-		? 0
-		: (a.score < b.score 
-			? -1
-			: 1);
+  return a.score == b.score 
+    ? 0
+    : (a.score < b.score 
+      ? -1
+      : 1);
 }
