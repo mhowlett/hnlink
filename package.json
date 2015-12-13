@@ -4,10 +4,10 @@
   "description": "HN link crawler",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no tests\" && exit 1"
   },
   "author": "Matt Howlett",
-  "license": "ISC",
+  "license": "GNU Affero General Public License",
   "dependencies": {
     "firebase": "^2.3.2",
     "leveldown": "^1.4.2",
