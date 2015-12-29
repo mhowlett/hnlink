@@ -1,7 +1,7 @@
 #!/bin/bash
 
-docker kill hnlink
+docker kill kafka
 docker kill zookeeper
 
-docker rm -f hnlink
+docker rm -f kafka
 docker rm -f zookeeper
