@@ -11,6 +11,7 @@ docker run -d --name kafka \
   -p 9092:9092 \
   -v /data/kafka:/var/lib/kafka \
   -v /data/kafka_logs:/var/log/kafka \
+  -v /git/hnlinks/etc/server.properties:/etc/kafka/server.properties \
   --link zookeeper:zookeeper \
   confluent/kafka
 
